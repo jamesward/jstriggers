@@ -1,0 +1,84 @@
+@(forceProdLoginUrl: String, forceSandboxLoginUrl: String, herokuLoginUrl: String, serverModel: play.api.libs.json.JsObject)
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+    <head>
+        <title>JS Triggers</title>
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/ng-cloak.css")">
+        <script>
+            var require = {
+                callback: function() {
+                    // default requirejs configs
+                    @play.api.Play.current.configuration.getString("assets.url").fold {
+                        @for(webJarJson <- org.webjars.RequireJS.getSetupJson(StaticWebJarAssets.url("")).values()) {
+                            requirejs.config(@Html(webJarJson.toString));
+                        }
+                    } { assetsUrl =>
+                        @for(webJarJson <- org.webjars.RequireJS.getSetupJson(StaticWebJarAssets.url(""), routes.WebJarAssets.at("").url).values()) {
+                            requirejs.config(@Html(webJarJson.toString));
+                        }
+                    }
+
+                    requirejs.config({
+                        "paths": {
+                            "app-css": "@routes.Assets.versioned("stylesheets/index.css").toString().stripSuffix(".css")"
+                        },
+                        "shim": {
+                            "app-css": ["bootstrap-css"],
+                            "angular": {
+                                "exports" : "angular",
+                                "deps": ["jquery"]
+                            }
+                        }
+                    });
+                }
+            };
+
+            var serverModel = @Html(serverModel.toString());
+        </script>
+        <script data-main="@routes.Assets.versioned("javascripts/index.js")" src="@StaticWebJarAssets.url(WebJarAssets.locate("require.min.js"))"></script>
+    </head>
+    <body class="ng-cloak" ng-controller="AppController">
+        <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <div>
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">JS Triggers</a>
+                </div>
+                <div class="navbar-right">
+                    <a href="#" class="btn btn-default navbar-btn" ng-click="logout()">Logout</a>
+                </div>
+            </div>
+        </div>
+
+        <div ng-hide="forceAuth">
+            Connect with Salesforce:
+            <a href="@forceProdLoginUrl" class="btn btn-default">Login to Normal Instance</a>
+            <a href="@forceSandboxLoginUrl" class="btn btn-default">Login to Sandbox Instance</a>
+        </div>
+
+        <div ng-hide="herokuAuth">
+            Connect with Heroku:
+            <a href="@herokuLoginUrl" class="btn btn-default">Login</a>
+        </div>
+
+        <div ng-show="forceAuth && herokuAuth">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">NPM Libraries</h3>
+                </div>
+                <div class="panel-body" ui-ace ng-model="deps" style="height: 100px;"></div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">SObject Triggers</h3>
+                    <select ng-options="sobject.label for sobject in sobjects | orderBy: 'name' track by sobject.name" ng-model="selectedSObject"></select>
+                </div>
+                <div class="panel-body" ui-ace ng-model="selectedTrigger"></div>
+                <div class="panel-footer">
+                    <button class="btn btn-default" ng-click="saveTrigger()">Save</button>
+                </div>
+            </div>
+        </div>
+
+    </body>
+</html>

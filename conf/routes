@@ -1,0 +1,27 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET         /                              controllers.Application.index
+
+GET         /sobjects                      controllers.Application.sobjects
+
+GET         /deps                          controllers.Application.deps
+
+GET         /trigger/:sobject              controllers.Application.trigger(sobject)
+POST        /trigger/:sobject              controllers.Application.saveTrigger(sobject)
+
+
+# OAuth
+GET         /_force_oauth_callback         controllers.Application.forceOAuthCallback(code: String, state: String)
+GET         /_heroku_oauth_callback        controllers.Application.herokuOAuthCallback(code: String)
+
+
+# Map static resources from the /public folder to the /assets URL path
+GET         /vassets/*file                 controllers.Assets.versioned(path="/public", file: Asset)
+GET         /assets/*file                  controllers.Assets.at(path="/public", file)
+
+
+# WebJars
+GET         /webjars/*file                 controllers.WebJarAssets.at(file)

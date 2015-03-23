@@ -1,0 +1,13 @@
+body {
+    padding-top: 60px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.navbar-right {
+    margin-right: 20px;
+}
+
+.ace_editor  {
+    height : 200px;
+}
