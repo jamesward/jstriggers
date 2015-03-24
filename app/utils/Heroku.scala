@@ -1,6 +1,7 @@
 package utils
 
-import java.io.ByteArrayOutputStream
+import java.io.{InputStream, ByteArrayOutputStream}
+import java.net.URL
 
 import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveOutputStream}
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream
@@ -58,13 +59,13 @@ class Heroku(implicit ec: ExecutionContext, ws: WSClient, config: Configuration)
     ws(s"/apps/$app/releases").get().ok(_.json.as[JsArray])
   }
 
-  def latestSlugBlob(app: String)(implicit accessToken: String): Future[Array[Byte]] = {
+  def latestSlugBlob(app: String)(implicit accessToken: String): Future[InputStream] = {
     releases(app).flatMap { releases =>
       releases.as[Seq[JsObject]].filter(_.\("slug").asOpt[JsObject].isDefined).sortBy(_.\("version").as[Int]).lastOption.fold {
-        Future.failed[Array[Byte]](NotFoundError("No releases"))
+        Future.failed[InputStream](NotFoundError("No releases"))
       } { release =>
         val slugId = (release \ "slug" \ "id").as[String]
-        slug(app, slugId).flatMap(slugBlob)
+        slug(app, slugId).map(slugBlob)
       }
     }
   }
@@ -73,16 +74,9 @@ class Heroku(implicit ec: ExecutionContext, ws: WSClient, config: Configuration)
     ws(s"/apps/$app/slugs/$slugId").get().ok(_.json)
   }
 
-  def slugBlob(jsValue: JsValue)(implicit accessToken: String): Future[Array[Byte]] = {
-    val url = (jsValue \ "blob" \ "url").as[String]
-    ws.url(url).getStream().flatMap { case (headers, enumerator) =>
-      headers.status match {
-        case Status.OK =>
-          enumerator |>>> Iteratee.consume[Array[Byte]]()
-        case Status.NOT_FOUND =>
-          Future.failed(NotFoundError(""))
-      }
-    }
+  def slugBlob(jsValue: JsValue)(implicit accessToken: String): InputStream = {
+    val url = new URL((jsValue \ "blob" \ "url").as[String])
+    url.openConnection().getInputStream
   }
 
   def createSource(app: String)(implicit accessToken: String): Future[JsValue] = {
