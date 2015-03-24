@@ -2,24 +2,18 @@ package controllers
 
 import java.io.ByteArrayInputStream
 
-import models._
-import org.apache.commons.compress.archivers.{ArchiveEntry, ArchiveInputStream}
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.archivers.{ArchiveEntry, ArchiveInputStream}
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
-import org.apache.commons.compress.utils.IOUtils
 import play.api.Play
-import play.api.data.validation.ValidationError
-import play.api.libs.Crypto
 import play.api.libs.json._
 import play.api.libs.ws.WS
 import play.api.mvc.Results.EmptyContent
-
 import play.api.mvc._
-import utils.{NotFoundError, Heroku, Force, AuthInfo}
+import utils.{AuthInfo, Force, Heroku, NotFoundError}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
-import scala.io.Source
 
 
 object Application extends Controller {

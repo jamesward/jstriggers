@@ -2,21 +2,17 @@ package utils
 
 import java.util.concurrent.TimeUnit
 
-import com.ning.http.util.Base64
-import com.sandinh.soap.SoapWS11
-import com.sandinh.xml.{Xml, XmlReader, XmlWriter}
 import play.api.Application
-import play.api.libs.concurrent.Akka
-import play.api.libs.iteratee.Iteratee
+import play.api.http.HeaderNames
 import play.api.libs.json._
-import play.api.libs.ws.{WSResponse, WSRequestHolder, WS}
-import play.api.http.{MimeTypes, Status, HeaderNames}
+import play.api.libs.ws.{WS, WSRequestHolder}
 import play.api.mvc.RequestHeader
 import play.api.mvc.Results.EmptyContent
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Promise, Future}
-import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.xml.{Node, TopScope, NamespaceBinding, NodeSeq}
+import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
+import scala.xml.{NamespaceBinding, TopScope}
 
 class Force(implicit app: Application) {
 

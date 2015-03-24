@@ -1,22 +1,17 @@
 package utils
 
-import java.io.{File, FileOutputStream, ByteArrayOutputStream, ByteArrayInputStream}
-import java.nio.file.{Paths, Files}
-import java.util.zip.ZipInputStream
+import java.io.ByteArrayOutputStream
 
-import org.apache.commons.compress.archivers.ArchiveEntry
 import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveOutputStream}
-import org.apache.commons.compress.compressors.gzip.{GzipCompressorOutputStream, GzipCompressorInputStream}
-import org.apache.commons.compress.utils.IOUtils
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream
 import play.api.Configuration
-import play.api.http.{MimeTypes, Status, HeaderNames}
+import play.api.http.{HeaderNames, Status}
 import play.api.libs.iteratee.Iteratee
-import play.api.libs.json.{JsObject, JsArray, Json, JsValue}
-import play.api.libs.ws.{InMemoryBody, EmptyBody, WSRequestHolder, WSClient}
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.ws.{InMemoryBody, WSClient, WSRequestHolder}
 import play.api.mvc.Results.EmptyContent
 
-import scala.concurrent.{Future, ExecutionContext}
-import scala.io.Source
+import scala.concurrent.{ExecutionContext, Future}
 
 class Heroku(implicit ec: ExecutionContext, ws: WSClient, config: Configuration) {
 
