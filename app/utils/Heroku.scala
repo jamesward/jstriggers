@@ -78,7 +78,7 @@ class Heroku(implicit ec: ExecutionContext, ws: WSClient, config: Configuration)
     ws.url(url).getStream().flatMap { case (headers, enumerator) =>
       headers.status match {
         case Status.OK =>
-          enumerator |>>> Iteratee.fold(Array.empty[Byte])(_ ++ _)
+          enumerator |>>> Iteratee.consume[Array[Byte]]()
         case Status.NOT_FOUND =>
           Future.failed(NotFoundError(""))
       }
