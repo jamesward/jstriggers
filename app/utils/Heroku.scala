@@ -85,21 +85,6 @@ class Heroku(implicit ec: ExecutionContext, ws: WSClient, config: Configuration)
     }
   }
 
-  def fileFromLatestSlug(app: String, file: String)(implicit accessToken: String): Future[Array[Byte]] = {
-    /*
-    slugs(app).flatMap { slugs =>
-      println(slugs)
-      slugBlob(slugs).map { blob =>
-        println(blob)
-
-        // get file contents
-        ???
-      }
-    }
-    */
-    ???
-  }
-
   def createSource(app: String)(implicit accessToken: String): Future[JsValue] = {
     ws(s"/apps/$app/sources").post(EmptyContent()).created(_.json)
   }
@@ -142,25 +127,6 @@ class Heroku(implicit ec: ExecutionContext, ws: WSClient, config: Configuration)
       }
     }
   }
-
-  /*
-  def dynoCreate(app: String, attach: Boolean, command: String, size: String): Future[JsValue] = {
-    val json = Json.obj(
-      "attach" -> attach,
-      "command" -> command,
-      "size" -> size
-    )
-
-    ws(s"/apps/$app/dynos").post(json).flatMap { response =>
-      response.status match {
-        case Status.CREATED =>
-          Future.successful(response.json)
-        case _ =>
-          Future.failed(new Exception(response.body))
-      }
-    }
-  }
-  */
 
 }
 

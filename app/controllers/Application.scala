@@ -189,7 +189,9 @@ object Application extends Controller {
 
   private def latestSources(app: String, files: Set[String])(implicit accessToken: String): Future[Map[String, Array[Byte]]] = {
     heroku.latestSlugBlob(app).map { blob =>
-      val archiveInputStream = new TarArchiveInputStream(new GzipCompressorInputStream(new ByteArrayInputStream(blob)))
+      val byteArrayInputStream = new ByteArrayInputStream(blob)
+      val gzipCompressorInputStream = new GzipCompressorInputStream(byteArrayInputStream)
+      val archiveInputStream = new TarArchiveInputStream(gzipCompressorInputStream)
 
       val sources = Stream
         .continually(archiveInputStream.getNextEntry)
@@ -205,6 +207,8 @@ object Application extends Controller {
         .toMap
 
       archiveInputStream.close()
+      gzipCompressorInputStream.close()
+      byteArrayInputStream.close()
 
       sources
     }
