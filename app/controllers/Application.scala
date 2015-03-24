@@ -118,15 +118,19 @@ object Application extends Controller {
     }
   }
 
-  private def triggerableSobjects(authInfo: AuthInfo): Future[Set[JsObject]] = {
+  private def workflowEnabledSobjects(authInfo: AuthInfo): Future[Set[JsObject]] = {
     force.sobjects(authInfo).map { json =>
-      (json \ "sobjects").as[Set[JsObject]].filter(_.\("triggerable").as[Boolean])
+      (json \ "sobjects").as[Set[JsObject]].filter { sobject =>
+        sobject.\("triggerable").as[Boolean] &&
+        sobject.\("createable").as[Boolean] &&
+        sobject.\("updateable").as[Boolean]
+      }
     }
   }
 
   def sobjects() = ForceAuthInfoAction.async { request =>
-    triggerableSobjects(request.forceAuthInfo).map { triggerables =>
-      Ok(Json.toJson(triggerables))
+    workflowEnabledSobjects(request.forceAuthInfo).map { sobject =>
+      Ok(Json.toJson(sobject))
     }
   }
 
@@ -153,7 +157,7 @@ object Application extends Controller {
         case e: NotFoundError =>
           heroku.createApp(appName)(request.herokuAccessToken).flatMap { _ =>
             val packageJsonContents = packageJson(appName, internalDeps ++ defaultDeps).toString()
-            val serverjsContents = templates.js.server(Set.empty[String])
+            val serverjsContents = templates.js.server(Set.empty[String], request.forceAuthInfo.instanceUrl)
 
             val sources = Map(
               "package.json" -> packageJsonContents.getBytes,
@@ -225,6 +229,7 @@ object Application extends Controller {
       } recover {
         case e: NotFoundError => Ok(defaultTrigger(sobject))
       }
+      Future.successful(Ok(defaultTrigger(sobject)))
     }
   }
 
@@ -233,16 +238,17 @@ object Application extends Controller {
     val trigger = (request.body \ "trigger").as[String]
 
     appName(request.forceAuthInfo).flatMap { appName =>
-      triggerableSobjects(request.forceAuthInfo).flatMap { sobjects =>
+      workflowEnabledSobjects(request.forceAuthInfo).flatMap { sobjects =>
         val sobjectNames = sobjects.map(_.\("name").as[String])
         val sobjectFileNames = sobjectNames.map(_ + ".js")
+
         latestSources(appName, sobjectFileNames ++ internalFiles)(request.herokuAccessToken).flatMap { sources =>
           val newPackageJson = packageJson(appName, internalDeps ++ deps)
           val existingSObjectNames = sources.keys.map(_.stripSuffix(".js")).toSet.intersect(sobjectNames)
           val newSources = sources
             .updated("package.json", newPackageJson.toString().getBytes)
             .updated(sobject + ".js", trigger.getBytes)
-            .updated("server.js", templates.js.server(existingSObjectNames + sobject).toString().getBytes)
+            .updated("server.js", templates.js.server(existingSObjectNames + sobject, request.forceAuthInfo.instanceUrl).toString().getBytes)
 
           val updateAppFuture = heroku.updateApp(appName, newSources)(request.herokuAccessToken)
 
@@ -250,11 +256,10 @@ object Application extends Controller {
             Future.successful(Json.obj())
           }
           else {
-            val name = "jstrigger-" + sobject
+            val name = "jstrigger_" + sobject
             val endpointUrl = s"https://$appName.herokuapp.com/$sobject"
-            force.createWorkflowOutboundMessage(name, sobject, endpointUrl)(request.forceAuthInfo).map { json =>
-              println(json)
-              json
+            force.createWorkflowOutboundMessage(request.forceAuthInfo, name, sobject, endpointUrl).flatMap { workflowOutboundMessageId =>
+              force.createWorkflowRule(request.forceAuthInfo, name, sobject)
             }
           }
 

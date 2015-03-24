@@ -1,4 +1,4 @@
-@(triggerSobjects: Set[String])var express = require("express");
+@(triggerSobjects: Set[String], serverUrl: String)var express = require("express");
 var xmlparser = require("express-xml-bodyparser");
 
 @triggerSobjects.map { name =>
@@ -15,21 +15,27 @@ app.use(xmlparser());
 
   app.post("/@name", function(req, res) {
 
-    var notification = req.body["soapenv:envelope"]["soapenv:body"][0]["notifications"][0];  var sessionId = notification["sessionid"][0];
+    var notification = req.body["soapenv:envelope"]["soapenv:body"][0]["notifications"][0];
+    var sessionId = notification["sessionid"][0];
 
     var data = {};
 
-    var sobject = notification["notification"][0]["sobject"][0];
-    Object.keys(sobject).forEach(function(key) {
-      if (key.indexOf("sf:") == 0) {
-        var newKey = key.substr(3);
-        data[newKey] = sobject[key][0];
-      }
-    });
+    if (notification["notification"] !== undefined) {
 
-    @{name}.insertOrUpdate(data, sessionId);
+      var sobject = notification["notification"][0]["sobject"][0];
+      Object.keys(sobject).forEach(function(key) {
+        if (key.indexOf("sf:") == 0) {
+          var newKey = key.substr(3);
+          data[newKey] = sobject[key][0];
+        }
+      });
+
+      @{name}.insertOrUpdate(data, "@serverUrl", sessionId);
+
+    }
 
     res.status(200).end();
+
   });
 
 }
